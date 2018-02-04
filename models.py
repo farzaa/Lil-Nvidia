@@ -2,6 +2,7 @@ from keras import losses
 from keras.models import Model, Sequential
 from keras.layers import Conv2D, Dense, Activation, Flatten, LSTM, BatchNormalization, TimeDistributed, Dropout, Convolution2D
 from keras import optimizers
+from keras.applications.densenet import DenseNet121
 
 def baseline_nvidia_model(height, width, channels):
     model = Sequential()
@@ -39,13 +40,20 @@ def baseline_nvidia_model(height, width, channels):
 
     return model
 
-# def two_stream_model(height, width, channels):
-#     first = Input(shape=(height, width, channels))
-#     a = Conv2D(24, (5,5), strides=(2,2))(first)
-#     a = Flatten()(a)
+# def dense_net():
+#     model = DenseNet121()
+#     model.summary(include_top=False, layers.Input(input_shape=(66, 200, 3)))
+#     print("done")
 #
-#     second = Input(shape=(height,width,channels))
-#     b = Conv2D(24, (5,5), strides=(2,2))(second)
-#     b = Flatten()(b)
+# # def two_stream_model(height, width, channels):
+# #     first = Input(shape=(height, width, channels))
+# #     a = Conv2D(24, (5,5), strides=(2,2))(first)
+# #     a = Flatten()(a)
+# #
+# #     second = Input(shape=(height,width,channels))
+# #     b = Conv2D(24, (5,5), strides=(2,2))(second)
+# #     b = Flatten()(b)
+# #
+# #     model = Model(inputs = main_input, outputs = [pred_out, deconv_out])
 #
-#     model = Model(inputs = main_input, outputs = [pred_out, deconv_out])
+# dense_net()
