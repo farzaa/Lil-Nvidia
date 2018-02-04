@@ -40,20 +40,25 @@ def baseline_nvidia_model(height, width, channels):
 
     return model
 
-# def dense_net():
-#     model = DenseNet121()
-#     model.summary(include_top=False, layers.Input(input_shape=(66, 200, 3)))
-#     print("done")
-#
-# # def two_stream_model(height, width, channels):
-# #     first = Input(shape=(height, width, channels))
-# #     a = Conv2D(24, (5,5), strides=(2,2))(first)
-# #     a = Flatten()(a)
-# #
-# #     second = Input(shape=(height,width,channels))
-# #     b = Conv2D(24, (5,5), strides=(2,2))(second)
-# #     b = Flatten()(b)
-# #
-# #     model = Model(inputs = main_input, outputs = [pred_out, deconv_out])
-#
+def dense_net():
+    model = DenseNet121(include_top=False, input_shape=(224,224,3))
+
+    # for layer in model.layers:
+    #     if layer.name.startswith('batch_normalization_'):
+    #
+    x = Flatten()(model.output)
+    x = Dense(128, activation = 'linear')(x)
+    x = Dropout(0.7)(x)
+    x = Dense(100, activation = 'linear')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(50, activation = 'linear')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(10, activation = 'linear')(x)
+    predictions = Dense(1, activation = 'linear')(x)
+    head_model = Model(input = model.input, output = predictions)
+    head_model.compile(optimizer=optimizers.Adam(lr=0.0001), loss=losses.mean_squared_error)
+    head_model.summary()
+
+    return head_model
+
 # dense_net()

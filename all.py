@@ -3,18 +3,20 @@ import cv2
 import os
 import numpy as np
 import scipy.misc
-from models import baseline_nvidia_model
+from models import baseline_nvidia_model, dense_net
 
 from keras import losses
 from keras.models import Model, Sequential
 from keras.layers import Conv2D, Dense, Activation, Flatten, LSTM, BatchNormalization, TimeDistributed, Dropout, Convolution2D
 from keras import optimizers
 
+from keras.models import load_model
+
 BATCH_SIZE = 32
 EPOCHS = 1
 debug = True
 
-if !debug:
+if not debug:
     EPOCHS = 100
 
 def sort_files_numerically(path_to_files):
@@ -85,9 +87,9 @@ def process_image(file_name):
     rgb_image = scipy.misc.imread('data/training_images_rgb/' + file_name)[200:400]
 
     combined_image = cv2.addWeighted(image,1.0, rgb_image,1.0,0)
-    combined_image = scipy.misc.imresize(combined_image, [66, 200]) / 255
+    combined_image = scipy.misc.imresize(combined_image, [224, 224]) / 255
     if debug: scipy.misc.imsave('data/debug.jpg', combined_image)
-    return combined_imageq
+    return combined_image
 
 def get_training_data():
         image_file_names = sort_files_numerically('data/training_images_opt')
@@ -109,8 +111,16 @@ def get_training_data():
         print('\n')
         return np.asarray(images), np.asarray(speeds)
 
-def train(X, y):
-    model = baseline_nvidia_model(X.shape[1], X.shape[2], X.shape[3])
+def evaluate_model(model_name):
+    X, y = get_training_data()
+    print("Loading/ Evaluating model... ")
+    model = load_model(model_name)
+    loss_and_metrics = model.evaluate(X, y, batch_size=128)
+
+def train():
+    X, y = get_training_data()
+    # model = dense_net(X.shape[1], X.shape[2], X.shape[3])
+    model = dense_net()
     model.fit(X, y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, validation_split=0.2, shuffle=True)
     model.save('comma_model.h5')
 
@@ -121,9 +131,6 @@ def debug_visualize(X, y):
         if cv2.waitKey(50) & 0xFF == ord('q'):
             break
 
-
-
 if __name__ == '__main__':
     build_data_locally('train.mp4')
-    X, y = get_training_data()
-    train(X, y)
+    train()
