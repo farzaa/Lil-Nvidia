@@ -14,7 +14,7 @@ from keras.models import load_model
 
 BATCH_SIZE = 8
 EPOCHS = 1
-debug = False
+debug = True
 
 SAMPLE_SIZE = 4
 
@@ -103,15 +103,18 @@ def get_training_data():
         speeds = []
         for i in range(len(image_file_names) - SAMPLE_SIZE):
             stacked_images = []
+            all_speeds = []
             for j in range(SAMPLE_SIZE):
-                file_name = image_file_names[i]
+                file_name = image_file_names[i + j]
                 sys.stdout.write("\rProcessing %s" % file_name)
-
                 stacked_images.append(process_image(file_name))
-
+                all_speeds.append(speed_data[i + j])
+                if debug: scipy.misc.imsave('data/debug ' + str(j) + '.jpg', stacked_images[-1])
 
             images.append(stacked_images)
-            speeds.append((speed_data[i] + speed_data[i + 1] + speed_data[i + 2] + speed_data[i + 3]) / SAMPLE_SIZE)
+            speeds.append(sum(all_speeds)/len(all_speeds))
+
+            print(speeds)
             # images.append((np.expand_dims(np.asarray(stacked_images), axis=0)))
 
             if debug and i == 70:
