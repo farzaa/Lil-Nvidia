@@ -12,11 +12,13 @@ from keras import optimizers
 
 from keras.models import load_model
 
+import random
+
 BATCH_SIZE = 8
 EPOCHS = 1
 debug = True
 
-SAMPLE_SIZE = 4
+SAMPLE_SIZE = 2
 
 if not debug:
     EPOCHS = 100
@@ -101,7 +103,7 @@ def get_training_data():
         images = []
         idea_images = []
         speeds = []
-        for i in range(len(image_file_names) - SAMPLE_SIZE):
+        for i in range(0, len(image_file_names) - SAMPLE_SIZE, SAMPLE_SIZE):
             stacked_images = []
             all_speeds = []
             for j in range(SAMPLE_SIZE):
@@ -119,6 +121,11 @@ def get_training_data():
 
             if debug and i == 70:
                 break
+
+        # shuffle
+        c = list(zip(images, speeds))
+        random.shuffle(c)
+        images, speeds = zip(*c)
 
         print('\n')
         return np.asarray(images), np.asarray(speeds)
