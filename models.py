@@ -42,25 +42,28 @@ def baseline_nvidia_model(height, width, channels):
 def get_model_3D_NVIDIA(samples, height, width, channels):
     model = Sequential()
 
-    model.add(Conv3D(24, (3), strides=(1), input_shape=(samples, height, width, channels), activation='relu', padding='same'))
-    
-    model.add(MaxPooling3D(pool_size=(1,5,5), strides=(1,2,2), padding='valid'))
-    model.add(Conv3D(36, (3), strides=(1), activation='relu', padding='same'))
 
-    model.add(MaxPooling3D(pool_size=(2,5,5), strides=(2,2,2), padding='valid'))
+    model.add(Conv3D(24, (3), strides=(1), input_shape=(samples, height, width, channels), activation='relu', padding='same'))
+    model.add(MaxPooling3D(pool_size=(1,2,2), strides=(1,2,2), padding='valid'))
+
+    model.add(Conv3D(36, (3), strides=(1), activation='relu', padding='same'))
+    model.add(MaxPooling3D(pool_size=(2,2,2), strides=(2,2,2), padding='valid'))
+
     model.add(Conv3D(48, (3), strides=(1), activation='relu', padding='same'))
+    model.add(MaxPooling3D(pool_size=(1,2,2), strides=(1,2,2), padding='valid'))
+
+    model.add(Conv3D(64, (3), strides=(1), activation='relu', padding='same'))
 
 
     model.add(Flatten())
-    model.add(Dropout(0.5))
 
     model.add(Dense(100))
     model.add(Activation('relu'))
-    model.add(Dropout(0.5))
+    model.add(Dropout(0.7))
 
     model.add(Dense(50))
     model.add(Activation('relu'))
-    model.add(Dropout(0.7))
+    model.add(Dropout(0.5))
 
     model.add(Dense(10))
     model.add(Activation('relu'))
@@ -70,6 +73,7 @@ def get_model_3D_NVIDIA(samples, height, width, channels):
 
     model.compile(optimizer=optimizers.Adam(lr=0.0001), loss=losses.mean_squared_error)
     model.summary()
+    return model
 
 def dense_net():
     model = DenseNet121(include_top=False, input_shape=(224,224,3))
@@ -91,5 +95,3 @@ def dense_net():
     head_model.summary()
 
     return head_model
-
-get_model_3D_NVIDIA(4, 66,200,3)

@@ -116,7 +116,6 @@ def get_training_data():
             images.append(stacked_images)
             speeds.append(sum(all_speeds)/len(all_speeds))
 
-            print(speeds)
             # images.append((np.expand_dims(np.asarray(stacked_images), axis=0)))
 
             if debug and i == 70:
