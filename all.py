@@ -3,7 +3,7 @@ import cv2
 import os
 import numpy as np
 import scipy.misc
-from models import baseline_nvidia_model, dense_net
+from models import baseline_nvidia_model, dense_net, get_model_3D_NVIDIA
 
 from keras import losses
 from keras.models import Model, Sequential
@@ -12,9 +12,11 @@ from keras import optimizers
 
 from keras.models import load_model
 
-BATCH_SIZE = 32
+BATCH_SIZE = 8
 EPOCHS = 1
-debug = True
+debug = False
+
+SAMPLE_SIZE = 4
 
 if not debug:
     EPOCHS = 100
@@ -32,7 +34,7 @@ def get_dense_opt_flow(first, second):
     hsv = np.zeros_like(first)
 
     # don't care about saturation.
-    hsv[...,1] = 0
+    hsv[...,1] = 255
 
     first = cv2.cvtColor(first, cv2.COLOR_BGR2GRAY)
     second = cv2.cvtColor(second, cv2.COLOR_BGR2GRAY)
@@ -84,12 +86,13 @@ def build_data_locally(video_name):
 
 def process_image(file_name):
     image = scipy.misc.imread('data/training_images_opt/' + file_name)[200:400]
-    rgb_image = scipy.misc.imread('data/training_images_rgb/' + file_name)[200:400]
+    image = scipy.misc.imresize(image, [66, 200]) / 255
+    # rgb_image = scipy.misc.imread('data/training_images_rgb/' + file_name)[200:400]
 
-    combined_image = cv2.addWeighted(image,1.0, rgb_image,1.0,0)
-    combined_image = scipy.misc.imresize(combined_image, [224, 224]) / 255
-    if debug: scipy.misc.imsave('data/debug.jpg', combined_image)
-    return combined_image
+    # combined_image = cv2.addWeighted(image,1.0, rgb_image,1.0,0)
+    # combined_image = scipy.misc.imresize(combined_image, [224, 224]) / 255
+    if debug: scipy.misc.imsave('data/debug.jpg', image)
+    return image
 
 def get_training_data():
         image_file_names = sort_files_numerically('data/training_images_opt')
@@ -98,12 +101,18 @@ def get_training_data():
         images = []
         idea_images = []
         speeds = []
-        for i in range(len(image_file_names) - 1):
-            file_name = image_file_names[i]
-            sys.stdout.write("\rProcessing %s" % file_name)
+        for i in range(len(image_file_names) - SAMPLE_SIZE):
+            stacked_images = []
+            for j in range(SAMPLE_SIZE):
+                file_name = image_file_names[i]
+                sys.stdout.write("\rProcessing %s" % file_name)
 
-            images.append(process_image(file_name))
-            speeds.append((speed_data[i] + speed_data[i + 1]) / 2)
+                stacked_images.append(process_image(file_name))
+
+
+            images.append(stacked_images)
+            speeds.append((speed_data[i] + speed_data[i + 1] + speed_data[i + 2] + speed_data[i + 3]) / SAMPLE_SIZE)
+            # images.append((np.expand_dims(np.asarray(stacked_images), axis=0)))
 
             if debug and i == 70:
                 break
@@ -119,8 +128,8 @@ def evaluate_model(model_name):
 
 def train():
     X, y = get_training_data()
-    # model = dense_net(X.shape[1], X.shape[2], X.shape[3])
-    model = dense_net()
+    print(X.shape)
+    model = get_model_3D_NVIDIA(X.shape[1], X.shape[2], X.shape[3], X.shape[4])
     model.fit(X, y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, validation_split=0.2, shuffle=True)
     model.save('comma_model.h5')
 

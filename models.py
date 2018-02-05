@@ -1,6 +1,6 @@
 from keras import losses
 from keras.models import Model, Sequential
-from keras.layers import Conv2D, Dense, Activation, Flatten, LSTM, BatchNormalization, TimeDistributed, Dropout, Convolution2D
+from keras.layers import Conv2D, Dense, Activation, Flatten, LSTM, BatchNormalization, TimeDistributed, Dropout, Convolution2D, Conv3D, MaxPooling3D
 from keras import optimizers
 from keras.applications.densenet import DenseNet121
 
@@ -34,6 +34,38 @@ def baseline_nvidia_model(height, width, channels):
 
     model.add(Dense(1))
     model.add(Activation('linear'))
+    model.compile(optimizer=optimizers.Adam(lr=0.0001), loss=losses.mean_squared_error)
+    model.summary()
+
+    return model
+
+def get_model_3D_NVIDIA(samples, height, width, channels):
+    model = Sequential()
+
+    model.add(Conv3D(24, (3), strides=(1), input_shape=(samples, height, width, channels), activation='relu', padding='same'))
+    model.add(MaxPooling3D(pool_size=(1,2,2), strides=(1,2,2), padding='valid'))
+    model.add(Conv3D(36, (3), strides=(1), activation='relu', padding='same'))
+    model.add(MaxPooling3D(pool_size=(2,2,2), strides=(2,2,2), padding='valid'))
+    model.add(Conv3D(48, (3), strides=(1), activation='relu', padding='same'))
+    model.add(MaxPooling3D(pool_size=(2,2,2), strides=(2,2,2), padding='valid'))
+    model.add(Conv3D(64, (3), strides=(1), activation='relu', padding='same'))
+
+    model.add(Flatten())
+    model.add(Dropout(0.8))
+    
+    model.add(Dense(100))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.7))
+
+    model.add(Dense(50))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.7))
+
+    model.add(Dense(10))
+    model.add(Activation('relu'))
+
+    model.add(Dense(1))
+    model.add(Activation('linear'))
 
     model.compile(optimizer=optimizers.Adam(lr=0.0001), loss=losses.mean_squared_error)
     model.summary()
@@ -61,4 +93,4 @@ def dense_net():
 
     return head_model
 
-# dense_net()
+get_model_3D_NVIDIA(4, 66,200,3)
