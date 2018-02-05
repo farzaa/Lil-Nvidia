@@ -53,13 +53,18 @@ def get_model_3D_NVIDIA(samples, height, width, channels):
     model.add(MaxPooling3D(pool_size=(1,2,2), strides=(1,2,2), padding='valid'))
 
     model.add(Conv3D(64, (3), strides=(1), activation='relu', padding='same'))
+    model.add(MaxPooling3D(pool_size=(1,2,2), strides=(1,2,2), padding='valid'))
 
 
     model.add(Flatten())
 
-    model.add(Dense(100))
+    model.add(Dense(128))
     model.add(Activation('relu'))
-    model.add(Dropout(0.7))
+    model.add(Dropout(0.8))
+
+    model.add(Dense(96))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.8))
 
     model.add(Dense(50))
     model.add(Activation('relu'))
