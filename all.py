@@ -18,7 +18,7 @@ BATCH_SIZE = 32
 EPOCHS = 1
 debug = True
 
-SAMPLE_SIZE = 1
+SAMPLE_SIZE = 2
 
 if not debug:
     EPOCHS = 100
@@ -113,12 +113,14 @@ def get_training_data():
         all_speeds.append(speed_data[i])
         all_speeds.append(speed_data[i + 1])
 
-        images.append(np.expand_dims(process_image(file_name), axis=0))
-        speeds.append(sum(all_speeds)/len(all_speeds))
+        stacked_images.append(process_image(file_name))
+        stacked_images.append(process_image(image_file_names[i + 1]))
 
-        # if debug: scipy.misc.imsave('data/debug ' + str(i) + '.jpg', images[-1])
+        images.append(stacked_images)
+        speeds.append(all_speeds)
 
         # images.append((np.expand_dims(np.asarray(stacked_images), axis=0)))
+        print(i)
         if debug and i == 96:
             break
 

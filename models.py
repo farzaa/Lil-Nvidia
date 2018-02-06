@@ -60,9 +60,9 @@ def nvidia_lstm(samples, height, width, channels):
 
     model.add(TimeDistributed(Dense(10, activation='relu')))
 
-    model.add(LSTM(128))
+    model.add(LSTM(4))
 
-    model.add(Dense(1, activation='linear'))
+    model.add(Dense(2, activation='linear'))
 
     model.compile(optimizer=optimizers.Adam(lr=0.0001), loss='mse')
     model.summary()
