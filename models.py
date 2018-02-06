@@ -38,6 +38,35 @@ def baseline_nvidia_model(height, width, channels):
     model.summary()
 
     return model
+def nvidia_lstm(samples, height, width, channels):
+    model = Sequential()
+
+    model.add(TimeDistributed(BatchNormalization(epsilon=0.001, axis=1), input_shape=(samples, height, width, channels)))
+
+    model.add(TimeDistributed(Conv2D(24, (5,5), strides=(2,2), activation='relu')))
+    model.add(TimeDistributed(Conv2D(36, (5,5), strides=(2,2), activation='relu')))
+    model.add(TimeDistributed(Conv2D(48, (5,5), strides=(2,2), activation='relu')))
+    model.add(TimeDistributed(Conv2D(64, (3,3), strides=(1,1), activation='relu')))
+
+
+    model.add(TimeDistributed(Flatten()))
+
+    model.add(TimeDistributed(Dense(100, activation='relu')))
+    model.add(Dropout(0.7))
+
+    model.add(TimeDistributed(Dense(50, activation='relu')))
+    model.add(Dropout(0.7))
+
+    model.add(TimeDistributed(Dense(10, activation='relu')))
+
+    model.add(LSTM(128))
+
+    model.add(Dense(1, activation='linear'))
+
+    model.compile(optimizer=optimizers.Adam(lr=0.0001), loss='mse')
+    model.summary()
+    return model
+
 
 def get_model_3D_NVIDIA(samples, height, width, channels):
     model = Sequential()
@@ -79,24 +108,3 @@ def get_model_3D_NVIDIA(samples, height, width, channels):
     model.compile(optimizer=optimizers.Adam(lr=0.0001), loss=losses.mean_squared_error)
     model.summary()
     return model
-
-def dense_net():
-    model = DenseNet121(include_top=False, input_shape=(224,224,3))
-
-    # for layer in model.layers:
-    #     if layer.name.startswith('batch_normalization_'):
-    #
-    x = Flatten()(model.output)
-    x = Dense(128, activation = 'linear')(x)
-    x = Dropout(0.7)(x)
-    x = Dense(100, activation = 'linear')(x)
-    x = Dropout(0.5)(x)
-    x = Dense(50, activation = 'linear')(x)
-    x = Dropout(0.5)(x)
-    x = Dense(10, activation = 'linear')(x)
-    predictions = Dense(1, activation = 'linear')(x)
-    head_model = Model(input = model.input, output = predictions)
-    head_model.compile(optimizer=optimizers.Adam(lr=0.0001), loss=losses.mean_squared_error)
-    head_model.summary()
-
-    return head_model

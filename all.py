@@ -3,7 +3,7 @@ import cv2
 import os
 import numpy as np
 import scipy.misc
-from models import baseline_nvidia_model, dense_net, get_model_3D_NVIDIA
+from models import baseline_nvidia_model, get_model_3D_NVIDIA, nvidia_lstm
 
 from keras import losses
 from keras.models import Model, Sequential
@@ -14,11 +14,11 @@ from keras.models import load_model
 
 import random
 
-BATCH_SIZE = 8
+BATCH_SIZE = 32
 EPOCHS = 1
 debug = True
 
-SAMPLE_SIZE = 2
+SAMPLE_SIZE = 32
 
 if not debug:
     EPOCHS = 100
@@ -97,37 +97,31 @@ def process_image(file_name):
     return image
 
 def get_training_data():
-        image_file_names = sort_files_numerically('data/training_images_opt')
-        speed_data = np.loadtxt('data/train.txt')
+    image_file_names = sort_files_numerically('data/training_images_opt')
+    speed_data = np.loadtxt('data/train.txt')
 
-        images = []
-        idea_images = []
-        speeds = []
-        for i in range(0, len(image_file_names) - SAMPLE_SIZE, SAMPLE_SIZE):
-            stacked_images = []
-            all_speeds = []
-            for j in range(SAMPLE_SIZE):
-                file_name = image_file_names[i + j]
-                sys.stdout.write("\rProcessing %s" % file_name)
-                stacked_images.append(process_image(file_name))
-                all_speeds.append(speed_data[i + j])
-                if debug: scipy.misc.imsave('data/debug ' + str(j) + '.jpg', stacked_images[-1])
+    images = []
+    idea_images = []
+    speeds = []
+    for i in range(0, len(image_file_names) - SAMPLE_SIZE, SAMPLE_SIZE):
+        stacked_images = []
+        all_speeds = []
+        for j in range(SAMPLE_SIZE):
+            file_name = image_file_names[i + j]
+            sys.stdout.write("\rProcessing %s" % file_name)
+            stacked_images.append(process_image(file_name))
+            all_speeds.append(speed_data[i + j])
+            if debug: scipy.misc.imsave('data/debug ' + str(j) + '.jpg', stacked_images[-1])
 
-            images.append(stacked_images)
-            speeds.append(sum(all_speeds)/len(all_speeds))
+        images.append(stacked_images)
+        speeds.append(sum(all_speeds)/len(all_speeds))
 
-            # images.append((np.expand_dims(np.asarray(stacked_images), axis=0)))
+        # images.append((np.expand_dims(np.asarray(stacked_images), axis=0)))
+        if debug and i == 96:
+            break
 
-            if debug and i == 70:
-                break
-
-        # shuffle
-        c = list(zip(images, speeds))
-        random.shuffle(c)
-        images, speeds = zip(*c)
-
-        print('\n')
-        return np.asarray(images), np.asarray(speeds)
+    print('\n')
+    return np.asarray(images), np.asarray(speeds)
 
 def evaluate_model(model_name):
     X, y = get_training_data()
@@ -138,7 +132,7 @@ def evaluate_model(model_name):
 def train():
     X, y = get_training_data()
     print(X.shape)
-    model = get_model_3D_NVIDIA(X.shape[1], X.shape[2], X.shape[3], X.shape[4])
+    model = nvidia_lstm(SAMPLE_SIZE, X.shape[2], X.shape[3], X.shape[4])
     model.fit(X, y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, validation_split=0.2, shuffle=True)
     model.save('comma_model.h5')
 
