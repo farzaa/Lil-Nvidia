@@ -18,7 +18,7 @@ BATCH_SIZE = 32
 EPOCHS = 1
 debug = True
 
-SAMPLE_SIZE = 32
+SAMPLE_SIZE = 1
 
 if not debug:
     EPOCHS = 100
@@ -106,15 +106,17 @@ def get_training_data():
     for i in range(0, len(image_file_names) - SAMPLE_SIZE, SAMPLE_SIZE):
         stacked_images = []
         all_speeds = []
-        for j in range(SAMPLE_SIZE):
-            file_name = image_file_names[i + j]
-            sys.stdout.write("\rProcessing %s" % file_name)
-            stacked_images.append(process_image(file_name))
-            all_speeds.append(speed_data[i + j])
-            if debug: scipy.misc.imsave('data/debug ' + str(j) + '.jpg', stacked_images[-1])
 
-        images.append(stacked_images)
+        file_name = image_file_names[i]
+        sys.stdout.write("\rProcessing %s" % file_name)
+
+        all_speeds.append(speed_data[i])
+        all_speeds.append(speed_data[i + 1])
+
+        images.append(np.expand_dims(process_image(file_name), axis=0))
         speeds.append(sum(all_speeds)/len(all_speeds))
+
+        # if debug: scipy.misc.imsave('data/debug ' + str(i) + '.jpg', images[-1])
 
         # images.append((np.expand_dims(np.asarray(stacked_images), axis=0)))
         if debug and i == 96:
@@ -132,6 +134,7 @@ def evaluate_model(model_name):
 def train():
     X, y = get_training_data()
     print(X.shape)
+    print(y.shape)
     model = nvidia_lstm(SAMPLE_SIZE, X.shape[2], X.shape[3], X.shape[4])
     model.fit(X, y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, validation_split=0.2, shuffle=True)
     model.save('comma_model.h5')

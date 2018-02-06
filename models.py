@@ -50,6 +50,7 @@ def nvidia_lstm(samples, height, width, channels):
 
 
     model.add(TimeDistributed(Flatten()))
+    model.add(Dropout(0.8))
 
     model.add(TimeDistributed(Dense(100, activation='relu')))
     model.add(Dropout(0.7))
