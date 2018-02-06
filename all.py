@@ -101,26 +101,15 @@ def get_training_data():
     speed_data = np.loadtxt('data/train.txt')
 
     images = []
-    idea_images = []
     speeds = []
     for i in range(0, len(image_file_names) - SAMPLE_SIZE, SAMPLE_SIZE):
-        stacked_images = []
-        all_speeds = []
-
         file_name = image_file_names[i]
         sys.stdout.write("\rProcessing %s" % file_name)
 
-        all_speeds.append(speed_data[i])
-        all_speeds.append(speed_data[i + 1])
-
-        stacked_images.append(process_image(file_name))
-        stacked_images.append(process_image(image_file_names[i + 1]))
-
-        images.append(stacked_images)
-        speeds.append(all_speeds)
+        images.append(process_image(file_name))
+        speeds.append((speed_data[i] + speed_data[i+1]) / 2)
 
         # images.append((np.expand_dims(np.asarray(stacked_images), axis=0)))
-        print(i)
         if debug and i == 96:
             break
 
@@ -137,7 +126,8 @@ def train():
     X, y = get_training_data()
     print(X.shape)
     print(y.shape)
-    model = nvidia_lstm(SAMPLE_SIZE, X.shape[2], X.shape[3], X.shape[4])
+    # model = nvidia_lstm(SAMPLE_SIZE, X.shape[2], X.shape[3], X.shape[4])
+    model = baseline_nvidia_model(66,200,3)
     model.fit(X, y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, validation_split=0.2, shuffle=True)
     model.save('comma_model.h5')
 
