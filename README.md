@@ -1,12 +1,14 @@
 # Lil-Nvidia
 
-This net is called Lil Nvidia because I like rappers who have a "Lil" in front of their name (ex. Lil Peep) and because its inspired by the NVIDIA net used for the task of learning to steer a vehicle using a single end to end ConvNet.
+This net is called Lil Nvidia because I like rappers who have a "Lil" in front of their name (ex. Lil Peep) and because its inspired by the NVIDIA net used originally for the task of learning to steer a vehicle using a single end to end ConvNet.
 
 ![GIFHERE](https://github.com/farzaa/Lil-Nvidia/blob/master/demo.gif?raw=true)
 
 Lil Nvidia specializes in predicting the speed of a vehicle from just a video. Please take a look at my section titled "Logic" for more info about how this things works in the background.
 
 ### Basics
+Note: This script first breaks the video into individual frames, calculates optical flow, and saves both the RGB data and optical flow data *locally*. Then, this data is all loaded into memory at one time when its time to train or test. This may be an issue depending on how much RAM your machine has. Future work would include to have this train by batch.
+
 To *test* this and simply output an MSE value over some test video, first create a folder called ```data``` in the root. In this folder, include your own ```test.mp4``` and ```test.txt```. They must be named just like this. Then simply run:
 ```sh
 python all.py -test
