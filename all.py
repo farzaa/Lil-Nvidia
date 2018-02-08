@@ -151,6 +151,13 @@ def test_and_visualize(training):
         rgb_file_names = sort_files_numerically(train_images_rgb_folder)
 
     index = 0
+
+    # credit: https://stackoverflow.com/questions/16615662/how-to-write-text-on-a-image-in-windows-using-python-opencv2/34273603
+    font                   = cv2.FONT_HERSHEY_SIMPLEX
+    fontScale              = 0.9
+    fontColor              = (255,255,255)
+    lineType               = 2
+
     for image_for_model, speed, opt_file, rgb_file in zip(X, y, opt_file_names, rgb_file_names):
         if not training:
             full_opt = scipy.misc.imread(test_images_opt_folder + opt_file)[200:400]
@@ -159,18 +166,38 @@ def test_and_visualize(training):
             full_opt = scipy.misc.imread(train_images_opt_folder + opt_file)[200:400]
             full_rgb = scipy.misc.imread(train_images_rgb_folder + rgb_file)[200:400]
 
-        cv2.imshow('frame', np.concatenate((full_opt, cv2.cvtColor(full_rgb, cv2.COLOR_BGR2RGB)), axis=0))
-        print(speed)
-        print(model.predict(np.expand_dims(image_for_model, axis=0)))
+        predicted_speed = model.predict(np.expand_dims(image_for_model, axis=0))[0][0]
 
-        if cv2.waitKey(100) & 0xFF == ord('q'):
+
+        cv2.putText(full_rgb, "Actual: " + str(round(speed, 2)),
+            (10,30),
+            font,
+            fontScale,
+            fontColor,
+            lineType)
+        cv2.putText(full_rgb, "Predicted: " + str(round(predicted_speed,2)),
+            (10,60),
+            font,
+            fontScale,
+            fontColor,
+            lineType)
+        cv2.putText(full_rgb, "Error: " + str(round(abs(predicted_speed - speed), 2)),
+            (10,90),
+            font,
+            fontScale,
+            fontColor,
+            lineType)
+
+        cv2.imshow('frame', np.concatenate((full_opt, cv2.cvtColor(full_rgb, cv2.COLOR_BGR2RGB)), axis=0))
+
+        if cv2.waitKey(10) & 0xFF == ord('q'):
             break
         index += 1
 
 def evaluate_model(training):
     X, y = get_data(training)
     print("Loading/ Evaluating model... ")
-    model = load_model('comma_model.h5')
+    model = load_model('model.h5')
     loss_and_metrics = model.evaluate(X, y, batch_size=32)
 
     print("Done evaluating, found MSE to be...")
