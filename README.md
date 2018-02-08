@@ -1,6 +1,8 @@
 # Lil-Nvidia
 
-This net is called Lil Nvidia because I like rappers who have a "Lil" in front of their name (ex. Lil Peep) and because its a smaller version similar to the NVIDIA net used for the task of learning to steer a vehicle in and end to end manner.
+This net is called Lil Nvidia because I like rappers who have a "Lil" in front of their name (ex. Lil Peep) and because its a smaller version similar of the NVIDIA net used for the task of learning to steer a vehicle using a single end to end ConvNet.
+
+![GIFHERE](https://github.com/farzaa/Lil-Nvidia/blob/master/demo.gif?raw=true)
 
 Lil Nvidia specializes in predicting the speed of a vehicle from just a video. Please take a look at my section titled "Logic" for more info about how this things works in the background.
 
