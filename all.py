@@ -203,6 +203,18 @@ def evaluate_model(training):
     print("Done evaluating, found MSE to be...")
     print(loss_and_metrics)
 
+def get_test_txt(training):
+    X, y = get_data(training)
+    print("Loading/ Evaluating model... ")
+    text_file = open("test.txt", "w")
+    model = load_model('model.h5')
+
+    for image_for_model, speed in zip(X,y):
+        pred = model.predict(np.expand_dims(image_for_model, axis=0))[0][0]
+        text_file.write("%s\n" % pred)
+
+    text_file.close()
+
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -218,6 +230,9 @@ if __name__ == '__main__':
             os.mkdir(test_images_opt_folder)
             os.mkdir(test_images_rgb_folder)
             load_video(use_training_data)
+
+    # get_test_txt(False)
+    # sys.exit()
 
     if args.train:
         print("You chose to train a new model...")
