@@ -1,7 +1,7 @@
 import sys
-import cv2
 import os
 import argparse
+import cv2
 import numpy as np
 import scipy.misc
 from models import baseline_nvidia_model
