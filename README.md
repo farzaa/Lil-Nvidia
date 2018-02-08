@@ -4,7 +4,7 @@ This net is called Lil Nvidia because I like rappers who have a "Lil" in front o
 
 ![GIFHERE](https://github.com/farzaa/Lil-Nvidia/blob/master/demo.gif?raw=true)
 
-Lil Nvidia specializes in predicting the speed of a vehicle from just a video. Please take a look at my section titled "Logic" for more info about how this things works in the background.
+Lil Nvidia specializes in predicting the speed of a vehicle from just a video. Please take a look at my section titled "Logic" for more info about how this thing works in the background.
 
 ### Basics
 Note: This script first breaks the video into individual frames, calculates optical flow, and saves both the RGB data and optical flow data *locally*. Then, this data is all loaded into memory at one time when its time to train or test. This may be an issue depending on how much RAM your machine has. Future work would include to have this train by batch.
@@ -38,6 +38,9 @@ This was all done for a 7 day challenge, so I had to think of approaches that wo
 - 3D CNN with 4 frames sent together. This approach was actually giving very good early results but was taking FOREVER to train. Had to bail from it.
 - 2D CNN with a optical flow data AND RGB data sent together. Didn't learn.
 - 2D CNN where the optical flow data and RGB data were blended together using ```cv2.addWeighted```. This was a crazy idea that sorta worked, but the net stopped learning after a certain point.
-- 2D CNN with just optical flow passed in. So, this gave very good results and I didn't expect it to. But, it overfit terribly.
+- 2D CNN with just optical flow passed in as BGR image. So, this gave very good results and I didn't expect it to. But, it overfit terribly.
 
 The last option is what I decided to iterate upon since it was the only version doing very well on the training set but terribly on the actual validation set. Originally, I was using the full NVIDIA CNN which has about 1.5 million parameters. I figured this was to much! I messed with the NVIDIA architecture about 20 different times and finally found a good balance of dropout, dense layer parameters, and conv layer parameters. Without dropout, this thing overfits horribly which is why in the first dense layer I call have a very high dropout parameter of 0.8.
+
+If you have anty questions, please drop me a DM on Twitter @farzatv. And enjoy this picture of Lil Peep :)
+![LilPeep](https://i.imgur.com/pIk0rTO.jpg)
