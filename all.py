@@ -11,14 +11,30 @@ from keras.layers import Conv2D, Dense, Activation, Flatten, LSTM, BatchNormaliz
 from keras import optimizers
 
 from keras.models import load_model
+import argparse
+
 
 import random
+import time
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("-train", action='store_true')
+parser.add_argument("-test", action='store_true')
+parser.add_argument("-test_and_vis", action='store_true')
+
+parser.add_argument("-input_video")
+parser.add_argument("-input_txt", default='train.txt')
 
 BATCH_SIZE = 32
 EPOCHS = 1
-debug = True
 
-SAMPLE_SIZE = 2
+debug = True
+train_images_opt_folder = 'data/training_images_opt/'
+train_images_rgb_folder = 'data/training_images_rgb/'
+
+test_images_opt_folder = 'data/test_images_opt/'
+test_images_rgb_folder = 'data/test_images_rgb/'
 
 if not debug:
     EPOCHS = 100
@@ -50,20 +66,11 @@ def get_dense_opt_flow(first, second):
 
     return bgr
 
-def build_data_locally(video_name):
-    # check if data is already available locally.
-    if not os.path.isdir('data/training_images_rgb'):
-        os.mkdir('data/training_images_rgb')
+def load_video(training=True):
+    video = cv2.VideoCapture('data/train.mp4')
+    if not training:
+        video = cv2.VideoCapture('data/test.mp4')
 
-    if not os.path.isdir('data/training_images_opt'):
-        os.mkdir('data/training_images_opt')
-
-    else:
-        print("Data already found in filesystem")
-        return
-
-
-    video = cv2.VideoCapture('data/' + video_name)
     success, first = video.read()
 
     fps = int(video.get(cv2.CAP_PROP_FPS))
@@ -72,12 +79,18 @@ def build_data_locally(video_name):
 
     count = 0
     while success:
-
-        cv2.imwrite('data/training_images_rgb/' + str(count) + '.jpg', first)
+        #TODO
         success, second = video.read()
+        if not success:
+            break
 
         flow = get_dense_opt_flow(first, second)
-        cv2.imwrite('data/training_images_opt/' + str(count) + '.jpg', flow)
+        if training:
+            cv2.imwrite(train_images_opt_folder + str(count) + '.jpg', flow)
+            cv2.imwrite(train_images_rgb_folder + str(count) + '.jpg', second)
+        else:
+            cv2.imwrite(test_images_opt_folder + str(count) + '.jpg', flow)
+            cv2.imwrite(test_images_rgb_folder + str(count) + '.jpg', second)
 
         first = second
         sys.stdout.write("\rCurrently on frame %d of video. Processing with optical flow." % count)
@@ -86,58 +99,126 @@ def build_data_locally(video_name):
     print('Saved %d frames' % (count) )
     video.release()
 
-def process_image(file_name):
-    image = scipy.misc.imread('data/training_images_opt/' + file_name)[200:400]
-    image = scipy.misc.imresize(image, [66, 200]) / 255
-    # rgb_image = scipy.misc.imread('data/training_images_rgb/' + file_name)[200:400]
 
-    # combined_image = cv2.addWeighted(image,1.0, rgb_image,1.0,0)
-    # combined_image = scipy.misc.imresize(combined_image, [224, 224]) / 255
+def process_image(file_name, training):
+    image = scipy.misc.imread('data/training_images_opt/' + file_name)[200:400]
+    if not training:
+        image = scipy.misc.imread('data/test_images_opt/' + file_name)[200:400]
+    image = scipy.misc.imresize(image, [66, 200]) / 255
     if debug: scipy.misc.imsave('data/debug.jpg', image)
     return image
 
-def get_training_data():
-    image_file_names = sort_files_numerically('data/training_images_opt')
+def get_data(training=True):
+    image_file_names = sort_files_numerically(train_images_opt_folder)
     speed_data = np.loadtxt('data/train.txt')
+    if not training:
+        image_file_names = sort_files_numerically(test_images_opt_folder)
+        #TODO
+        speed_data = np.loadtxt('data/train.txt')
 
     images = []
     speeds = []
-    for i in range(0, len(image_file_names) - SAMPLE_SIZE, SAMPLE_SIZE):
+    rgb = []
+    full_opt = []
+    for i in range(0, len(image_file_names) - 1):
         file_name = image_file_names[i]
         sys.stdout.write("\rProcessing %s" % file_name)
 
-        images.append(process_image(file_name))
+        images.append(process_image(file_name, training))
         speeds.append((speed_data[i] + speed_data[i+1]) / 2)
 
-        # images.append((np.expand_dims(np.asarray(stacked_images), axis=0)))
-        if debug and i == 96:
+        if debug and i == 21000:
             break
 
     print('\n')
+
     return np.asarray(images), np.asarray(speeds)
 
-def evaluate_model(model_name):
-    X, y = get_training_data()
-    print("Loading/ Evaluating model... ")
-    model = load_model(model_name)
-    loss_and_metrics = model.evaluate(X, y, batch_size=128)
 
-def train():
-    X, y = get_training_data()
-    print(X.shape)
-    print(y.shape)
-    # model = nvidia_lstm(SAMPLE_SIZE, X.shape[2], X.shape[3], X.shape[4])
-    model = baseline_nvidia_model(66,200,3)
+def train(speeds_file_name):
+    X, y = get_data(training=True)
+    model = baseline_nvidia_model(X.shape[1], X.shape[2], X.shape[3])
     model.fit(X, y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, validation_split=0.2, shuffle=True)
     model.save('comma_model.h5')
 
-def debug_visualize(X, y):
-    for image, speed in zip(X,y):
-        cv2.imshow('frame', image)
+
+def test_and_visualize():
+    X, y = get_data(training=False)
+    model = load_model('comma_model.h5')
+
+    opt_file_names = sort_files_numerically(test_images_opt_folder)
+    rgb_file_names = sort_files_numerically(train_images_opt_folder)
+
+    index = 0
+    for image_for_model, speed, opt_file, rgb_file in zip(X, y, opt_file_names, rgb_file_names):
+        full_opt = scipy.misc.imread(test_images_opt_folder + opt_file)[200:400]
+        full_rgb = scipy.misc.imread(test_images_rgb_folder + rgb_file)[200:400]
+
+        cv2.imshow('frame', np.concatenate((full_opt, full_rgb), axis=0))
         print(speed)
-        if cv2.waitKey(50) & 0xFF == ord('q'):
+        print(model.predict(np.expand_dims(image_for_model, axis=0)))
+
+        if cv2.waitKey(100) & 0xFF == ord('q'):
             break
+        index += 1
+
+def evaluate_model():
+    X, y = get_data(training=True)
+    print("Loading/ Evaluating model... ")
+    model = load_model('comma_model.h5')
+    loss_and_metrics = model.evaluate(X, y, batch_size=32)
+    print(loss_and_metrics)
+
 
 if __name__ == '__main__':
-    build_data_locally('train.mp4')
-    train()
+    args = parser.parse_args()
+
+    input_video = args.input_video
+    input_txt = args.input_txt
+
+    if not os.path.exists('data/' + input_video):
+        print("Can't find input video...")
+        sys.exit()
+
+    print("Found input video %s" % input_video)
+
+    if args.train:
+
+        print("You chose the training option...")
+        # input_txt = args.input_txt
+        # if not os.path.exists('data/' + input_txt):
+        #     print("Can't find input txt ground truth...")
+        #     sys.exit()
+        #
+        # if not os.path.isdir('data/training_images_opt'):
+        #     os.mkdir('data/training_images_opt')
+        # if not os.path.isdir('data/training_images_opt'):
+        #     os.mkdir('data/training_images_rgb')
+        #
+        #
+        # load_video(train_video_name)
+        # build_data_locally(input_video)
+        # train(input_txt)
+
+    elif args.test:
+        if not os.path.isdir(test_images_opt_folder) and not os.path.isdir(test_images_rgb_folder):
+            os.mkdir(test_images_opt_folder)
+            os.mkdir(test_images_rgb_folder)
+            load_video(training=False)
+        evaluate_model()
+
+    elif args.test_and_vis:
+        print("Testing and visualizing...")
+        if not os.path.isdir(test_images_opt_folder) and not os.path.isdir(test_images_rgb_folder):
+            os.mkdir(test_images_opt_folder)
+            os.mkdir(test_images_rgb_folder)
+            load_video(training=False)
+
+        test_and_visualize()
+
+    elif args.just_visualize:
+        print("Just visualizing...")
+
+
+    args = parser.parse_args()
+    print(args)
