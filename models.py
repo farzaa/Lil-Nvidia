@@ -12,7 +12,6 @@ def baseline_nvidia_model(height, width, channels):
     model.add(Conv2D(48, (5,5), strides=(2,2), activation='relu'))
     model.add(Conv2D(64, (3,3), strides=(1,1), activation='relu'))
 
-
     model.add(Flatten())
     model.add(Dropout(0.8))
 
@@ -27,4 +26,5 @@ def baseline_nvidia_model(height, width, channels):
 
     model.compile(optimizer=optimizers.Adam(lr=0.0001), loss='mse')
     model.summary()
+
     return model

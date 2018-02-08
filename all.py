@@ -1,21 +1,11 @@
 import sys
 import cv2
 import os
+import argparse
 import numpy as np
 import scipy.misc
-from models import baseline_nvidia_model, get_model_3D_NVIDIA, nvidia_lstm
-
-from keras import losses
-from keras.models import Model, Sequential
-from keras.layers import Conv2D, Dense, Activation, Flatten, LSTM, BatchNormalization, TimeDistributed, Dropout, Convolution2D
-from keras import optimizers
-
+from models import baseline_nvidia_model
 from keras.models import load_model
-import argparse
-
-
-import random
-import time
 
 parser = argparse.ArgumentParser()
 
@@ -35,7 +25,7 @@ test_images_rgb_folder = 'data/test_images_rgb/'
 BATCH_SIZE = 32
 EPOCHS = 1
 
-debug = True
+debug = False
 
 if not debug:
     EPOCHS = 100
@@ -69,10 +59,9 @@ def get_dense_opt_flow(first, second):
 
 # load up the video and actually save the frames/optical flow output locally for faster training/testing.
 def load_video(training=True):
-
+    video = None
     if not training:
-        if not os.path.exists('data/test.mp4'):
-            video = cv2.VideoCapture('data/test.mp4')
+        video = cv2.VideoCapture('data/test.mp4')
     else:
         video = cv2.VideoCapture('data/train.mp4')
 
@@ -106,9 +95,9 @@ def load_video(training=True):
 # simple function to handle all the image preprocessing stuff in one fucntion.
 def process_image(file_name, training):
     if training:
-        image = scipy.misc.imread('data/training_images_opt/' + file_name)[200:400]
+        image = scipy.misc.imread(train_images_opt_folder + file_name)[200:400]
     else:
-        image = scipy.misc.imread('data/test_images_opt/' + file_name)[200:400]
+        image = scipy.misc.imread(test_images_opt_folder + file_name)[200:400]
 
     image = scipy.misc.imresize(image, [66, 200]) / 255
     if debug: scipy.misc.imsave('data/debug.jpg', image)
@@ -121,7 +110,7 @@ def get_data(training):
         speed_data = np.loadtxt('data/train.txt')
     else:
         image_file_names = sort_files_numerically(train_images_opt_folder)
-        speed_data = np.loadtxt('data/train.txt')
+        speed_data = np.loadtxt('data/test.txt')
 
     images = []
     speeds = []
@@ -135,7 +124,7 @@ def get_data(training):
         images.append(process_image(file_name, training))
         speeds.append((speed_data[i] + speed_data[i+1]) / 2)
 
-        if debug and count == 100:
+        if debug and count == 1000:
             break
         count += 1
 
@@ -144,15 +133,15 @@ def get_data(training):
     return np.asarray(images), np.asarray(speeds)
 
 
-def train():
+def train(training):
     X, y = get_data(training)
     model = baseline_nvidia_model(X.shape[1], X.shape[2], X.shape[3])
     model.fit(X, y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, validation_split=0.2, shuffle=True)
-    model.save('comma_model.h5')
+    model.save('model.h5')
 
 def test_and_visualize(training):
     X, y = get_data(training)
-    model = load_model('comma_model.h5')
+    model = load_model('model.h5')
 
     if not training:
         opt_file_names = sort_files_numerically(test_images_opt_folder)
@@ -183,6 +172,8 @@ def evaluate_model(training):
     print("Loading/ Evaluating model... ")
     model = load_model('comma_model.h5')
     loss_and_metrics = model.evaluate(X, y, batch_size=32)
+
+    print("Done evaluating, found MSE to be...")
     print(loss_and_metrics)
 
 
@@ -196,7 +187,7 @@ if __name__ == '__main__':
             os.mkdir(train_images_rgb_folder)
             load_video(use_training_data)
     else:
-        if not os.path.isdir(test_images_opt_folder) and not os.path.isdir(test_images_train_folder):
+        if not os.path.isdir(test_images_opt_folder) and not os.path.isdir(test_images_rgb_folder):
             os.mkdir(test_images_opt_folder)
             os.mkdir(test_images_rgb_folder)
             load_video(use_training_data)
@@ -212,7 +203,7 @@ if __name__ == '__main__':
             print("Can't find train.mp4")
             sys.exit()
 
-        train(input_txt)
+        train(use_training_data)
 
     elif args.test:
         print("You chose to test the model...")
