@@ -42,5 +42,6 @@ This was all done for a 7 day challenge, so I had to think of approaches that wo
 
 The last option is what I decided to iterate upon since it was the only version doing very well on the training set but terribly on the actual validation set. Originally, I was using the full NVIDIA CNN which has about 1.5 million parameters. I figured this was to much! I messed with the NVIDIA architecture about 20 different times and finally found a good balance of dropout, dense layer parameters, and conv layer parameters. Without dropout, this thing overfits horribly which is why in the first dense layer I call have a very high dropout parameter of 0.8.
 
-If you have anty questions, please drop me a DM on Twitter @farzatv. And enjoy this picture of Lil Peep :)
+If you have any questions, please drop me a DM on Twitter [@farzatv](https://twitter.com/FarzaTV). And enjoy this picture of Lil Peep :)
+
 ![LilPeep](https://i.imgur.com/pIk0rTO.jpg)
